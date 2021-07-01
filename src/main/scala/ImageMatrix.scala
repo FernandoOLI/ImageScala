@@ -6,7 +6,7 @@ import scala.Array.ofDim
 object ImageMatrix extends App {
   val matrix = photoTomatrix(ImageIO.read(new File("src/main/resources/image.png")))
   val matrixGray = toGray(matrix)
-
+  saveGrayImage(matrixGray)
   private def photoTomatrix(img: BufferedImage):Array[Array[Array[Int]]] = {
     val w = img.getWidth
     val h =  img.getHeight
@@ -37,7 +37,22 @@ object ImageMatrix extends App {
     println("teste")
     matrixRGBA
   }
+  def saveGrayImage(imageGray: Array[Array[Double]]) = {
 
+    val w = imageGray.size
+    val h = imageGray(0).size
+    var rp = new BufferedImage(h, w, BufferedImage.TYPE_BYTE_GRAY)
+    readImage(0,0,imageGray)
+    def readImage(w1: Integer, h1: Integer, img: Array[Array[Double]]): Unit = {
+      rp.setRGB(h1,w1, imageGray(w1)(h1).toInt + 255)
+
+      if (h1 < h - 1)
+        readImage(w1, h1 + 1, img)
+      else if (h1 == h - 1 && w1 < w - 1)
+        readImage(w1 + 1, 0, img)
+    }
+    ImageIO.write(rp, "jpg", new File("src/main/resources/test.jpg"))
+  }
   def toGray(matrixRGBA: Array[Array[Array[Int]]]): Array[Array[Double]] = {
     val w = matrixRGBA.size
     val h = matrixRGBA.length
