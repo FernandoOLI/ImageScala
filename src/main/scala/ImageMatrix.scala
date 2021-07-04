@@ -1,17 +1,26 @@
+import java.awt.Image
 import java.awt.image.BufferedImage
 import java.io.File
 import javax.imageio.ImageIO
 import scala.Array.ofDim
 
 object ImageMatrix extends App {
-  val matrix = photoTomatrix(ImageIO.read(new File("src/main/resources/image.png")))
-  val matrixGray = toGray(matrix)
-  saveGrayImage(matrixGray)
-  private def photoTomatrix(img: BufferedImage):Array[Array[Array[Int]]] = {
-    val w = img.getWidth
-    val h =  img.getHeight
+  val basewidth = 200
+  val baseheight = 100
+  val min_height = 5
+  val min_width = 5
 
-    var matrixRGBA = ofDim[Int](h, w, 4)
+  val matrix = photoTomatrix(ImageIO.read(new File("src/main/resources/images/image.png")))
+  val matrixGray = toGray(matrix)
+  saveGrayImage(matrixGray, "grayImage")
+  val matrixReduce = reduceImageMatrix(matrix)
+  saveGrayImage(toGray(matrixReduce),"reduceImage")
+
+  private def photoTomatrix(img: BufferedImage): Array[Array[Array[Int]]] = {
+    val w = img.getWidth
+    val h = img.getHeight
+
+    val matrixRGBA = ofDim[Int](h, w, 4)
     readImage(0, 0, img)
 
     def readImage(w1: Integer, h1: Integer, img: BufferedImage): Unit = {
@@ -33,33 +42,67 @@ object ImageMatrix extends App {
     matrixRGBA
   }
 
-  def reduceImageMatrix(matrixRGBA: Array[Array[Array[Int]]]): Array[Array[Array[Int]]] = {
-    println("teste")
-    matrixRGBA
-  }
-  def saveGrayImage(imageGray: Array[Array[Double]]) = {
+  def reduceImageMatrix(matrixRGBA: Array[Array[Array[Int]]]) = {
+    val tupleMedida = escalaReducao(matrixRGBA(0).size, matrixRGBA.size)
+    val w = tupleMedida._1
+    val h = tupleMedida._2
 
-    val w = imageGray.size
-    val h = imageGray(0).size
-    var rp = new BufferedImage(h, w, BufferedImage.TYPE_BYTE_GRAY)
-    readImage(0,0,imageGray)
+    val w_normal = matrixRGBA(0).size
+    val h_normal = matrixRGBA.size
+
+    println("Width " ,matrixRGBA(0).size )
+    println("Height " ,matrixRGBA.size )
+    val rpImage = new BufferedImage(matrixRGBA(0).size, matrixRGBA.size, BufferedImage.TYPE_INT_RGB)
+    createImage(0,0,matrixRGBA)
+
+    def createImage(w1: Integer, h1: Integer, img: Array[Array[Array[Int]]]): Unit = {
+      val r = matrixRGBA(h1)(w1)(1) * 65536
+      val g = matrixRGBA(h1)(w1)(2) * 256
+      val b = matrixRGBA(h1)(w1)(3)
+
+      rpImage.setRGB(w1,h1, r+ g + b)
+
+      if (h1 < h_normal - 1) {
+        createImage(w1, h1 + 1, img)
+      } else if (h1 == h_normal - 1 && w1 < w_normal - 1)
+        createImage(w1 + 1, 0, img)
+    }
+
+    val resized = rpImage.getScaledInstance(w, h, Image.SCALE_DEFAULT)
+
+    // Saving Image back to disck
+    val bufferedImage = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB)
+    bufferedImage.getGraphics.drawImage(resized, 0, 0, null)
+    ImageIO.write(bufferedImage, "JPG", new File("src/main/resources/images/resized.jpg"))
+    photoTomatrix(bufferedImage)
+  }
+
+  def saveGrayImage(imageGray: Array[Array[Double]], name: String) = {
+    val w = imageGray(0).size
+    val h = imageGray.size
+    var rp = new BufferedImage(w, h, BufferedImage.TYPE_BYTE_GRAY)
+    readImage(0, 0, imageGray)
+
     def readImage(w1: Integer, h1: Integer, img: Array[Array[Double]]): Unit = {
-      rp.setRGB(h1,w1, imageGray(w1)(h1).toInt + 255)
+      rp.setRGB(w1, h1, imageGray(h1)(w1).toInt + 350)
 
       if (h1 < h - 1)
         readImage(w1, h1 + 1, img)
       else if (h1 == h - 1 && w1 < w - 1)
         readImage(w1 + 1, 0, img)
     }
-    ImageIO.write(rp, "jpg", new File("src/main/resources/test.jpg"))
+
+    ImageIO.write(rp, "jpg", new File("src/main/resources/images/"+name+".jpg"))
   }
+
   def toGray(matrixRGBA: Array[Array[Array[Int]]]): Array[Array[Double]] = {
-    val w = matrixRGBA.size
-    val h = matrixRGBA.length
-    var matrixGray = ofDim[Double](w, h)
+    val w = matrixRGBA(0).size
+    val h = matrixRGBA.size
+    val matrixGray = ofDim[Double](h, w)
     readImage(0, 0, matrixRGBA)
 
     def readImage(w1: Integer, h1: Integer, img: Array[Array[Array[Int]]]): Unit = {
+
       matrixGray(h1)(w1) = 0.2989 * img(h1)(w1)(1) + 0.5870 * img(h1)(w1)(2) + 0.1140 * img(h1)(w1)(3)
       if (h1 < h - 1)
         readImage(w1, h1 + 1, img)
@@ -67,5 +110,28 @@ object ImageMatrix extends App {
         readImage(w1 + 1, 0, img)
     }
     matrixGray
+  }
+
+
+  def escalaReducao(width: Integer, height: Integer): (Integer, Integer) = {
+
+    if (width > basewidth) {
+      val size_height =( height.toDouble * (basewidth.toDouble / width.toDouble))
+      if (size_height <= min_height || size_height.isNaN) {
+        return (basewidth, min_height)
+      } else
+        return (basewidth, size_height.toInt)
+    }
+
+    if (height > baseheight) {
+      val size_width = (width.toDouble * (baseheight.toDouble / height.toDouble))
+      if (size_width <= min_height || size_width.isNaN) {
+        (basewidth, min_height)
+      }
+      else {
+        (basewidth, size_width.toInt)
+      }
+    }
+    else (width, height)
   }
 }
