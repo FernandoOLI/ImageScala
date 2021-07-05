@@ -5,8 +5,8 @@ import javax.imageio.ImageIO
 import scala.Array.ofDim
 
 object ImageMatrix extends App {
-  val basewidth = 200
-  val baseheight = 100
+  val basewidth = 800
+  val baseheight = 800
   val min_height = 5
   val min_width = 5
 
