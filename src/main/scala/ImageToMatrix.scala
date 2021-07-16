@@ -87,6 +87,10 @@ object ImageMatrix {
     ImageIO.write(rp, "jpg", new File("src/main/resources/images/"+name+".jpg"))
   }
 
+  /*
+  * Convertendo a Matriz multidimensional para uma matriz de uma dimensão em escala de cinza
+  *
+  * */
   def toGray(matrixRGBA: Array[Array[Array[Int]]]): Array[Array[Double]] = {
     val w = matrixRGBA(0).size
     val h = matrixRGBA.size
@@ -104,7 +108,10 @@ object ImageMatrix {
     matrixGray
   }
 
-
+  /*
+  * Função para reduzir ou aumentar o tamanho da imagem proporcionalmente
+  * levando em conta tbm valores mínimos
+  * */
   def escalaReducao(width: Integer, height: Integer): (Integer, Integer) = {
 
     if (width > Config.basewidth) {
