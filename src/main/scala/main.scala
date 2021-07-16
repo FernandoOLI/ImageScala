@@ -8,7 +8,7 @@ import javax.imageio.ImageIO
 
 object main extends App {
 
-  val matrix = photoTomatrix(ImageIO.read(new File("src/main/resources/images/wall.jpg")))
+  val matrix = photoTomatrix(ImageIO.read(new File("src/main/resources/images/image.png")))
   val matrixGray = toGray(matrix)
   saveGrayImage(matrixGray, "grayImage")
   val matrixReduce = reduceImageMatrix(matrix)
